@@ -6,6 +6,7 @@ import Image from 'next/image';
 import ReactMarkdown from 'react-markdown';
 import LoadingDots from '@/components/ui/LoadingDots';
 import { Document } from 'langchain/document';
+import MarkdownWithMathJax from '../components/MarkdownWithMathJax';
 import {
   Accordion,
   AccordionContent,
@@ -17,6 +18,7 @@ export default function Home() {
   const [query, setQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [temperature, setTemperature] = useState<number>(1);
   const [messageState, setMessageState] = useState<{
     messages: Message[];
     pending?: string;
@@ -25,7 +27,7 @@ export default function Home() {
   }>({
     messages: [
       {
-        message: 'Hi, what would you like to learn about this legal case?',
+        message: 'Hi, what would you like to learn about this document?',
         type: 'apiMessage',
       },
     ],
@@ -40,6 +42,33 @@ export default function Home() {
   useEffect(() => {
     textAreaRef.current?.focus();
   }, []);
+
+  // Add the following useEffect hook
+  useEffect(() => {
+    messageListRef.current?.scrollTo(0, messageListRef.current.scrollHeight);
+  }, [messages]);
+
+  const handleNewTopic = () => {
+    // Reset the conversation history
+    setMessageState({
+      messages: [
+        {
+          message: 'Hi, what would you like to learn about this document?',
+          type: 'apiMessage',
+        },
+      ],
+      history: [],
+    });
+    // Log to the console
+    console.log('Topic has been changed'); //onlly logs to the console in browser.
+  };
+
+  const handleTemperatureChange = (event: any) => {
+    // Reset the conversation history
+    // Log to the console
+    setTemperature(Number(event.target.value));
+    console.log('temperature has been changed: ' + event.target.value); //onlly logs to the console in browser.
+  };
 
   //handle form submission
   async function handleSubmit(e: any) {
@@ -77,6 +106,7 @@ export default function Home() {
         body: JSON.stringify({
           question,
           history,
+          temperature,
         }),
       });
       const data = await response.json();
@@ -165,13 +195,13 @@ export default function Home() {
                         : styles.usermessage;
                   }
                   return (
-                    <>
+                    <div key={`message-${index}`}>
                       <div key={`chatMessage-${index}`} className={className}>
                         {icon}
                         <div className={styles.markdownanswer}>
-                          <ReactMarkdown linkTarget="_blank">
+                          <MarkdownWithMathJax>
                             {message.message}
-                          </ReactMarkdown>
+                          </MarkdownWithMathJax>
                         </div>
                       </div>
                       {message.sourceDocs && (
@@ -191,9 +221,9 @@ export default function Home() {
                                     <h3>Source {index + 1}</h3>
                                   </AccordionTrigger>
                                   <AccordionContent>
-                                    <ReactMarkdown linkTarget="_blank">
+                                    <MarkdownWithMathJax>
                                       {doc.pageContent}
-                                    </ReactMarkdown>
+                                    </MarkdownWithMathJax>
                                     <p className="mt-2">
                                       <b>Source:</b> {doc.metadata.source}
                                     </p>
@@ -204,7 +234,7 @@ export default function Home() {
                           </Accordion>
                         </div>
                       )}
-                    </>
+                    </div>
                   );
                 })}
               </div>
@@ -224,7 +254,7 @@ export default function Home() {
                     placeholder={
                       loading
                         ? 'Waiting for response...'
-                        : 'What is this legal case about?'
+                        : 'What is this document about?'
                     }
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -251,6 +281,22 @@ export default function Home() {
                     )}
                   </button>
                 </form>
+                <button
+                    type="button"
+                    className={styles.newTopicButton} 
+                    onClick={handleNewTopic}
+                  >
+                    🧹 New topic
+                  </button>
+                  &nbsp;&nbsp;|&nbsp;&nbsp;
+                  <label>Choose a temperature:</label>
+                  <select name="temperature" id="temperature" defaultValue={temperature} onChange={handleTemperatureChange}>
+                    <option key="option1" value={0.1}>0.1</option>
+                    <option key="option2" value={0.3}>0.3</option>
+                    <option key="option3" value={0.5}>0.5</option>
+                    <option key="option4" value={0.7}>0.7</option>
+                    <option key="option5" value={1.0}>1.0</option>
+                  </select>
               </div>
             </div>
             {error && (

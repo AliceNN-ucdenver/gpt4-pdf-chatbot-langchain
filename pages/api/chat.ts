@@ -1,18 +1,18 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { OpenAIEmbeddings } from 'langchain/embeddings/openai';
-import { PineconeStore } from 'langchain/vectorstores/pinecone';
-import { makeChain, makeChainFaiss } from '@/utils/makechain';
+import { makeChainFaiss } from '@/utils/makechain';
 import { FaissStore } from "langchain/vectorstores/faiss";
-import { pinecone } from '@/utils/pinecone-client';
-import { PINECONE_INDEX_NAME, PINECONE_NAME_SPACE } from '@/config/pinecone';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const { question, history } = req.body;
+  const { question, history, temperature } = req.body;
 
   console.log('question', question);
+  console.log('history', history);  
+  console.log('temperature', temperature);
+  let temp: number = Number(temperature);
 
   //only accept post requests
   if (req.method !== 'POST') {
@@ -27,27 +27,15 @@ export default async function handler(
   const sanitizedQuestion = question.trim().replaceAll('\n', ' ');
 
   try {
-    const index = pinecone.Index(PINECONE_INDEX_NAME);
-
-    /* create vectorstore*/
-    const vectorStore = await PineconeStore.fromExistingIndex(
-      new OpenAIEmbeddings({}),
-      {
-        pineconeIndex: index,
-        textKey: 'text',
-        namespace: PINECONE_NAME_SPACE, //namespace comes from your config folder
-      },
-    );
 
     // Load the vector store from the same directory
     const loadedVectorStore = await FaissStore.load(
-      '/Users/shawnmccarthy/gpt4/index',
+      './index2',
       new OpenAIEmbeddings()
     );
 
     //create chain
-    const chain = makeChain(vectorStore);
-    const chainFaiss = makeChainFaiss(loadedVectorStore);
+    const chainFaiss = makeChainFaiss(loadedVectorStore, temp);
 
     //Ask a question using chat history
     const response = await chainFaiss.call({

@@ -1,10 +1,7 @@
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import { OpenAIEmbeddings } from 'langchain/embeddings/openai';
-import { PineconeStore } from 'langchain/vectorstores/pinecone';
-import { pinecone } from '@/utils/pinecone-client';
 import { FaissStore } from "langchain/vectorstores/faiss";
 import { CustomPDFLoader } from '@/utils/customPDFLoader';
-import { PINECONE_INDEX_NAME, PINECONE_NAME_SPACE } from '@/config/pinecone';
 import { DirectoryLoader } from 'langchain/document_loaders/fs/directory';
 
 /* Name of directory to retrieve your files from */
@@ -30,24 +27,28 @@ export const run = async () => {
     console.log('split docs', docs);
 
     console.log('creating vector store...');
-    /*create and store the embeddings in the vectorStore*/
-    const embeddings = new OpenAIEmbeddings();
-    const index = pinecone.Index(PINECONE_INDEX_NAME); //change to your own index name
 
-    //embed the PDF documents
-    await PineconeStore.fromDocuments(docs, embeddings, {
-      pineconeIndex: index,
-      namespace: PINECONE_NAME_SPACE,
-      textKey: 'text',
-    });
+    //load the first one
+    const vectorStore = await FaissStore.fromDocuments(
+        [docs[0]],
+        new OpenAIEmbeddings()
+      );
+
+    for (let i=1; i < docs.length; i++) {
+      let doc = docs[i]
+      console.log('doc', doc);
+      await vectorStore.addDocuments([doc]);
+    }
+
+    console.log('creating faiss vector store...');
+    await vectorStore.save('./index2');
 
     // Load the docs into the vector store
-    const vectorStore = await FaissStore.fromDocuments(
-      docs,
-      new OpenAIEmbeddings()
-    );
-
-    await vectorStore.save('/Users/shawnmccarthy/gpt4/index');
+    //const vectorStore = await FaissStore.fromDocuments(
+    //  docs,
+    //  new OpenAIEmbeddings()
+    //);
+    //await vectorStore.save('../index');
 
   } catch (error) {
     console.log('error', error);
