@@ -7,6 +7,8 @@ import ReactMarkdown from 'react-markdown';
 import LoadingDots from '@/components/ui/LoadingDots';
 import { Document } from 'langchain/document';
 import MarkdownWithMathJax from '../components/MarkdownWithMathJax';
+import redlines from '@/utils/redlines';
+
 import {
   Accordion,
   AccordionContent,
@@ -19,6 +21,7 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [temperature, setTemperature] = useState<number>(1);
+  const [vectorIndex, setVectorIndex] = useState<string>('index2');
   const [messageState, setMessageState] = useState<{
     messages: Message[];
     pending?: string;
@@ -70,6 +73,13 @@ export default function Home() {
     console.log('temperature has been changed: ' + event.target.value); //onlly logs to the console in browser.
   };
 
+  const handleVectorIndexChange = (event: any) => {
+    // Reset the conversation history
+    // Log to the console
+    setVectorIndex(event.target.value);
+    console.log('vector index has been changed: ' + event.target.value); //onlly logs to the console in browser.
+  };
+
   //handle form submission
   async function handleSubmit(e: any) {
     e.preventDefault();
@@ -107,6 +117,7 @@ export default function Home() {
           question,
           history,
           temperature,
+          vectorIndex
         }),
       });
       const data = await response.json();
@@ -296,6 +307,13 @@ export default function Home() {
                     <option key="option3" value={0.5}>0.5</option>
                     <option key="option4" value={0.7}>0.7</option>
                     <option key="option5" value={1.0}>1.0</option>
+                  </select>
+                  &nbsp;&nbsp;|&nbsp;&nbsp;
+                  <label>Choose a index:</label>
+                  <select name="vectorindex" id="vectorindex" defaultValue={vectorIndex} onChange={handleVectorIndexChange}>
+                    <option key="option1" value='index2'>PDF</option>
+                    <option key="option2" value='index3'>GIT</option>
+                    <option key="option3" value='index4'>WIKI</option>
                   </select>
               </div>
             </div>

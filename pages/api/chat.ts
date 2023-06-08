@@ -7,7 +7,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const { question, history, temperature } = req.body;
+  const { question, history, temperature, vectorIndex } = req.body;
 
   console.log('question', question);
   console.log('history', history);  
@@ -30,7 +30,7 @@ export default async function handler(
 
     // Load the vector store from the same directory
     const loadedVectorStore = await FaissStore.load(
-      './index2',
+      './' + vectorIndex,
       new OpenAIEmbeddings()
     );
 
